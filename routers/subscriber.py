@@ -10,6 +10,7 @@ from models.source import Source
 from models.scraper import ScrapeQuery, ScrapeData
 from models.recommendation import RecommendationQuery
 from bundle.clustering import cluster_by_topic
+from datetime import datetime
 
 
 subscriber_router = APIRouter(prefix="/subscriber")
@@ -62,24 +63,23 @@ def process_sources(list_source_ids: list[str]):
         print("Clustering sources")
 
         cluster_topics, idx_to_topic = cluster_by_topic(
-            MODEL_NAME, documents, num_clusters=len(list_source_ids)
+            MODEL_NAME, documents, num_clusters=len(sources)
         )
 
         list_post_queries: List[PostQuery] = []
 
         for cluster_idx, list_sources in cluster_topics.items():
-            cluster_source_ids = []
+            cluster_sources: List[Source] = []
 
             for source_idx in list_sources:
-                source_id = list_source_ids[source_idx]
-                cluster_source_ids.append(source_id)
+                source = sources[source_idx]
+                cluster_sources.append(source)
 
             post = Post(
-                source_ids=cluster_source_ids,
+                source_ids=[source.id for source in cluster_sources],
                 topics=idx_to_topic[cluster_idx],
-                date=sources[
-                    0
-                ].date,  # FIXME: for now, put the date of the first source
+                date=get_min_date([source.date for source in cluster_sources]),
+                media=cluster_sources[0].media,
             )
 
             if add_data_to_api(DB_HOST, "annotator/add-post", post) != Response.FAILURE:
@@ -99,3 +99,9 @@ def process_sources(list_source_ids: list[str]):
             add_data_to_api(
                 RECOMMENDER_HOST, "recommender/add-recommendations", recommender_query
             )
+
+
+def get_min_date(list_dates: List[str]) -> str:
+    DT_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+    list_dt = [datetime.strptime(date, DT_FORMAT) for date in list_dates if date]
+    return min(list_dt).strftime(DT_FORMAT)
