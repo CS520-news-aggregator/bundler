@@ -11,6 +11,10 @@ from models.scraper import ScrapeQuery, ScrapeData
 from models.recommendation import RecommendationQuery
 from bundle.clustering import cluster_by_topic
 from datetime import datetime
+import requests
+from PIL import Image
+from io import BytesIO
+from urllib.parse import unquote
 
 
 subscriber_router = APIRouter(prefix="/subscriber")
@@ -74,12 +78,32 @@ def process_sources(list_source_ids: list[str]):
             for source_idx in list_sources:
                 source = sources[source_idx]
                 cluster_sources.append(source)
+#-----------------Collage Creation---------------------------------------------------------------
+            links = []
+            index=0;
+            while len(links) != 4:
+                if cluster_sources[index].media != "[Removed]":
+                    links.append(cluster_sources[index].media)
+            links = [unquote(link) for link in links]
+            collage = Image.new("RGBA", (500,500), color = (255,255,255,255))
+            responses = [requests.get(image_link) for image_link in links]
+            photos = [Image.open(BytesIO(response.content)).convert("RGBA") for response in responses]
+            photos = [photos.resize((250,250)) for photos in photos]
+            index = 0
+            for i in range(0,500,250):
+                for j in range(0,500,250):
+                    if(index < len(photos)):
+                        collage.paste(photos[index], (i,j))
+                        index+=1
+                    else:
+                        break
 
+#-----------------Collage Creation--------------------------------------------------------------
             post = Post(
                 source_ids=[source.id for source in cluster_sources],
                 topics=idx_to_topic[cluster_idx],
                 date=get_min_date([source.date for source in cluster_sources]),
-                media=cluster_sources[0].media,
+                media=collage,
             )
 
             if add_data_to_api(DB_HOST, "annotator/add-post", post) != Response.FAILURE:
