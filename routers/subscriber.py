@@ -80,7 +80,7 @@ def process_sources(list_source_ids: list[str]):
 
             post = Post(
                 source_ids=[source.id for source in cluster_sources],
-                topics=idx_to_topic[cluster_idx],
+                topics=list(filter(None, idx_to_topic[cluster_idx])),
                 date=get_min_date([source.date for source in cluster_sources]),
                 media=cluster_sources[0].media,
             )
