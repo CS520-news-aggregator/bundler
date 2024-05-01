@@ -48,7 +48,7 @@ def process_sources(list_source_ids: list[str]):
             )
         ) != Response.FAILURE:
             source = Source(**source_data["source"])
-            scrape_query = ScrapeQuery(source_id=source_id, link=source.link)
+            scrape_query = ScrapeQuery(link=source.link)
 
             if (
                 scraped_json := get_data_from_api(
