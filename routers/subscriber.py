@@ -1,14 +1,13 @@
 from typing import List
 from fastapi import APIRouter, Body, Request, BackgroundTasks
 from tqdm import tqdm
-from models.llm import PostAnalysis, PostQuery, PostsAnalysisQuery
-from models.utils.constants import DB_HOST, LLM_HOST, SCRAPER_HOST, RECOMMENDER_HOST
+from models.llm import PostQuery, PostsAnalysisQuery
+from models.utils.constants import DB_HOST, LLM_HOST, SCRAPER_HOST
 from models.pub_sub import AggregatorMessage
 from models.utils.funcs import add_data_to_api, get_data_from_api, Response
 from models.post import Post
 from models.source import Source
 from models.scraper import ScrapeQuery, ScrapeData
-from models.recommendation import RecommendationQuery
 from bundle.clustering import cluster_by_topic
 from datetime import datetime
 
@@ -96,12 +95,6 @@ def process_sources(list_source_ids: list[str]):
             llm_post_analysis = PostsAnalysisQuery(post_queries=list_post_queries)
             add_data_to_api(LLM_HOST, "llm/add-analysis", llm_post_analysis)
 
-            recommender_query = RecommendationQuery(
-                post_ids=[post_query.post_id for post_query in list_post_queries]
-            )
-            add_data_to_api(
-                RECOMMENDER_HOST, "recommender/add-recommendations", recommender_query
-            )
 
 
 def get_min_date(list_dates: List[str]) -> str:
