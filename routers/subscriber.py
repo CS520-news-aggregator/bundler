@@ -61,6 +61,9 @@ def process_sources(list_source_ids: list[str]):
 
     if documents:
         print("Clustering sources")
+        assert len(documents) == len(
+            sources
+        ), "Documents and sources length should be equal"
 
         cluster_topics, idx_to_topic = cluster_by_topic(
             MODEL_NAME, documents, num_clusters=len(sources)
@@ -68,10 +71,10 @@ def process_sources(list_source_ids: list[str]):
 
         list_post_queries: List[PostQuery] = []
 
-        for cluster_idx, list_sources in cluster_topics.items():
+        for cluster_idx, list_source_idx in cluster_topics.items():
             cluster_sources: List[Source] = []
 
-            for source_idx in list_sources:
+            for source_idx in list_source_idx:
                 source = sources[source_idx]
                 cluster_sources.append(source)
 
@@ -83,11 +86,11 @@ def process_sources(list_source_ids: list[str]):
             )
 
             if add_data_to_api(DB_HOST, "annotator/add-post", post) != Response.FAILURE:
-                cur_documents = [documents[source_idx] for source_idx in list_sources]
+                cur_documents = [
+                    documents[source_idx] for source_idx in list_source_idx
+                ]
                 text_content = "\n ".join(cur_documents)
-                list_post_queries.append(
-                    PostQuery(post_id=str(post.id), text=text_content)
-                )
+                list_post_queries.append(PostQuery(post_id=post.id, text=text_content))
 
         if list_post_queries:
             llm_post_analysis = PostsAnalysisQuery(post_queries=list_post_queries)
