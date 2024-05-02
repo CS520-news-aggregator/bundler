@@ -58,22 +58,18 @@ def train_bert():
 
 
 def debug():
-    from routers.subscriber import process_sources
+    from bundle.collage import make_collage
 
-    process_sources(
+    link = make_collage(
         [
-            "22822f8d-2a6c-4706-91cf-77727a812497",
-            "5c035810-ac1c-437d-b685-854154daedb4",
-            "3409c980-04b5-4077-8121-94660e1b0dce",
-            "a51b2f74-296c-4b19-957f-d354fb96522e",
-            "7e9fcc63-d1b6-47b7-a8c3-2bb4579346c5",
-            "63eacb14-67bd-4d2a-bf61-870ebecec788",
-            "a5a257f0-23a8-48a3-b8d1-b12d03a01493",
-            "0c723c45-584d-4f59-a7df-05b3088d7a80",
-            "61eb20d5-4ab2-4985-ab8f-1852bd0f8480",
-            "ec2e4414-6b53-4604-816a-663745de3473",
+            "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Taka_Shiba.jpg/1200px-Taka_Shiba.jpg",
+            "https://cdn.britannica.com/71/234471-050-093F4211/shiba-inu-dog-in-the-snow.jpg",
+            "https://www.akc.org/wp-content/uploads/2017/11/Shiba-Inu-standing-in-profile-outdoors.jpg",
+            "https://www.akc.org/wp-content/uploads/2017/11/Shiba-Inu-puppy-standing-outdoors.jpg",
         ]
     )
+
+    print(link)
 
 
 if __name__ == "__main__":

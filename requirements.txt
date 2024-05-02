@@ -21,3 +21,5 @@ tqdm==4.66.2
 nltk==3.8.1
 bertopic==0.16.0
 pillow==10.3.0
+pyimgur==0.6.0
+python-dotenv==1.0.1
