@@ -32,9 +32,16 @@ def make_collage(source_media: List[str]) -> str:
     else:
         return source_media[0]
 
-    photos = [
-        Image.open(BytesIO(content)).convert("RGBA") for content in response_content
-    ]
+    photos = []
+    for content in response_content:
+        try:
+            photo = Image.open(BytesIO(content)).convert("RGBA")
+            photos.append(photo)
+        except Exception as e:
+            print("Failed to open image", e)
+
+    if len(photos) < 2:
+        return source_media[0]
 
     myWidth = 500
     hsizeArr = [
