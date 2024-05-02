@@ -20,3 +20,4 @@ gensim==4.3.2
 tqdm==4.66.2
 nltk==3.8.1
 bertopic==0.16.0
+pillow==10.3.0
