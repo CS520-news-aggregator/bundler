@@ -10,6 +10,11 @@ from models.source import Source
 from models.scraper import ScrapeQuery, ScrapeData
 from bundle.clustering import cluster_by_topic
 from datetime import datetime
+import requests
+from PIL import Image
+from io import BytesIO
+from urllib.parse import unquote
+import PIL
 
 
 subscriber_router = APIRouter(prefix="/subscriber")
@@ -76,12 +81,55 @@ def process_sources(list_source_ids: list[str]):
             for source_idx in list_source_idx:
                 source = sources[source_idx]
                 cluster_sources.append(source)
+#-----------------Collage Creation---------------------------------------------------------------
+            links = []
+            index=0;
+            while len(links) != 4:
+                if cluster_sources[index].media != "[Removed]":
+                    links.append(cluster_sources[index].media)
+            links = [unquote(link) for link in links]
+            try:
+                responses = [requests.get(link) for link in links]
+            except requests.exceptions.RequestException as e: 
+                print("Failed to retrieve image")
+            else:
+                photos = [Image.open(BytesIO(response.content)).convert("RGBA") for response in responses]
 
+                myWidth = 500
+                #photoDim = [myWidth / float(img.size[0]) for img in photos]
+                hsizeArr = [int((float(img.size[1])*float((myWidth / float(img.size[0]))))) for img in photos]
+                common_height = min(hsizeArr)
+                photos=[photo.resize((myWidth,common_height), PIL.Image.LANCZOS) for photo in photos]
+
+                total_width = myWidth*2
+                total_height = common_height * (len(photos) // 2 + len(photos) % 2)
+                collage = Image.new('RGBA', (int(total_width), int(total_height)), (255, 255, 255, 0))
+                xOffset,yOffset = 0
+
+                for photo, hsize in zip(photos, hsizeArr):
+                    collage.paste(photo, (xOffset, yOffset))
+                    xOffset += myWidth
+                    if xOffset >= total_width:
+                        xOffset = 0
+                        yOffset += hsize
+            # responses = [requests.get(image_link) for image_link in links]
+            # photos = [Image.open(BytesIO(response.content)).convert("RGBA") for response in responses]
+            # photos = [photos.resize((250,250)) for photos in photos]
+            # index = 0
+            # for i in range(0,500,250):
+            #     for j in range(0,500,250):
+            #         if(index < len(photos)):
+            #             collage.paste(photos[index], (i,j))
+            #             index+=1
+            #         else:
+            #             break
+
+#-----------------Collage Creation--------------------------------------------------------------
             post = Post(
                 source_ids=[source.id for source in cluster_sources],
                 topics=list(filter(None, idx_to_topic[cluster_idx])),
                 date=get_min_date([source.date for source in cluster_sources]),
-                media=cluster_sources[0].media,
+                media=collage,
             )
 
             if add_data_to_api(DB_HOST, "annotator/add-post", post) != Response.FAILURE:
