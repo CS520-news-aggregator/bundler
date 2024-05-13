@@ -67,7 +67,9 @@ def evaluate_bert():
     from bundle.models.bert.data.social_animal_driver import get_social_news_data
     from bundle.models.bert.train import load_model
 
-    topic_model = load_model(os.path.join(os.path.join(FILE_DIR, "saved_models"), "bert_model.bin"))
+    topic_model = load_model(
+        os.path.join(os.path.join(FILE_DIR, "saved_models"), "bert_model.bin")
+    )
 
     cleaned_docs = get_social_news_data() + get_all_news_data()
 
@@ -81,10 +83,18 @@ def evaluate_bert():
     topics = topic_model.get_topics()
     topics.pop(-1, None)
 
-    topic_words = [[word for word, _ in topic_model.get_topic(topic) if word != ""] for topic in topics]
     topic_words = [
-        [words for words, _ in topic_model.get_topic(topic)] for topic in range(len(set(topics)) - 1)
+        [word for word, _ in topic_model.get_topic(topic) if word != ""]
+        for topic in topics
     ]
+    topic_words = [
+        [words for words, _ in topic_model.get_topic(topic)]
+        for topic in range(len(set(topics)) - 1)
+    ]
+    topic_words = [[topic_w for topic_w in topic if topic_w] for topic in topic_words]
+    topic_words = list(filter(None, topic_words))
+
+    import pdb; pdb.set_trace()
 
     # Evaluate
     coherence_model = CoherenceModel(
@@ -92,7 +102,7 @@ def evaluate_bert():
         texts=tokens,
         corpus=corpus,
         dictionary=dictionary,
-        coherence="c_v",
+        coherence="u_mass",
     )
     coherence = coherence_model.get_coherence()
 
