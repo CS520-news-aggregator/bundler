@@ -1,11 +1,13 @@
-from contextlib import asynccontextmanager
 import os
-from fastapi import FastAPI
+import sys
+from contextlib import asynccontextmanager
+
 import uvicorn
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from models.utils.funcs import subscribe_to_publisher
 from routers.subscriber import subscriber_router
-import sys
 
 
 @asynccontextmanager
@@ -39,12 +41,11 @@ async def root():
 
 
 def train_bert():
-    from bundle.models.bert.data.social_animal_driver import (
-        get_social_news_data,
-    )
-    from bundle.models.bert.train import create_model, save_model, load_model
-    from bundle.models.bert.constants import FILE_DIR
     from bertopic import BERTopic
+
+    from bundle.models.bert.constants import FILE_DIR
+    from bundle.models.bert.data.social_animal_driver import get_social_news_data
+    from bundle.models.bert.train import create_model, load_model, save_model
 
     prev_topic_model = load_model(
         os.path.join(os.path.join(FILE_DIR, "saved_models"), "bert_model_all_news.bin")
@@ -58,21 +59,21 @@ def train_bert():
 
 
 def evaluate_bert():
-    from bundle.models.bert.data.social_animal_driver import get_social_news_data
-    from bundle.models.bert.data.all_news_driver import get_all_news_data
-    from bundle.models.bert.train import load_model
-    from bundle.models.bert.constants import FILE_DIR
-    from gensim.models.coherencemodel import CoherenceModel
     import gensim.corpora as corpora
+    from gensim.models.coherencemodel import CoherenceModel
 
-    topic_model = load_model(
-        os.path.join(os.path.join(FILE_DIR, "saved_models"), "bert_model.bin")
-    )
+    from bundle.models.bert.constants import FILE_DIR
+    from bundle.models.bert.data.all_news_driver import get_all_news_data
+    from bundle.models.bert.data.social_animal_driver import get_social_news_data
+    from bundle.models.bert.train import load_model
+
+    topic_model = load_model(os.path.join(os.path.join(FILE_DIR, "saved_models"), "bert_model.bin"))
 
     cleaned_docs = get_social_news_data() + get_all_news_data()
 
     vectorizer = topic_model.vectorizer_model
     analyzer = vectorizer.build_analyzer()
+    # analyzer = vectorizer.build_tokenizer()
     tokens = [analyzer(doc) for doc in cleaned_docs]
 
     dictionary = corpora.Dictionary(tokens)
@@ -80,13 +81,9 @@ def evaluate_bert():
     topics = topic_model.get_topics()
     topics.pop(-1, None)
 
+    topic_words = [[word for word, _ in topic_model.get_topic(topic) if word != ""] for topic in topics]
     topic_words = [
-        [word for word, _ in topic_model.get_topic(topic) if word != ""]
-        for topic in topics
-    ]
-    topic_words = [
-        [words for words, _ in topic_model.get_topic(topic)]
-        for topic in range(len(set(topics)) - 1)
+        [words for words, _ in topic_model.get_topic(topic)] for topic in range(len(set(topics)) - 1)
     ]
 
     # Evaluate
