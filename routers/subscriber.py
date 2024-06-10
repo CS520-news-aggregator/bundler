@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Body, Request, BackgroundTasks
 from tqdm import tqdm
 from models.llm import PostQuery, PostsAnalysisQuery
-from models.utils.constants import DB_HOST, LLM_HOST, SCRAPER_HOST
+from models.utils.constants import DB_HOST, LLM_HOST, SCRAPER_HOST, DT_FORMAT
 from models.pub_sub import AggregatorMessage
 from models.utils.funcs import add_data_to_api, get_data_from_api, Response
 from models.post import Post
@@ -97,6 +97,5 @@ def process_sources(list_source_ids: list[str]):
 
 
 def get_min_date(list_dates: List[str]) -> str:
-    DT_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
     list_dt = [datetime.strptime(date, DT_FORMAT) for date in list_dates if date]
     return min(list_dt).strftime(DT_FORMAT)
